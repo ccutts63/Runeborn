@@ -1,0 +1,19 @@
+# Ignore everything
+/*
+
+# Except the files and folders you want to track
+!/Game/main.cpp
+
+!/Game/character.cpp
+!/Game/character.h
+
+!/Game/enemy.cpp
+!/Game/enemy.h
+
+!/Game/console_utils.h
+!/Game/item.h
+!/Game/random.h
+!/Game/showprint.h
+
+!/.gitignore
+!/README.md
