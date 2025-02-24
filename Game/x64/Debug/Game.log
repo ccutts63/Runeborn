@@ -1,0 +1,5 @@
+﻿  main.cpp
+C:\Users\admin\source\repos\Christian.Cutts\PRG210\Runeborn\Game\main.cpp(213,8): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
+C:\Users\admin\source\repos\Christian.Cutts\PRG210\Runeborn\Game\main.cpp(239,21): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
+C:\Users\admin\source\repos\Christian.Cutts\PRG210\Runeborn\Game\main.cpp(1453,12): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+  Game.vcxproj -> C:\Users\admin\source\repos\Christian.Cutts\PRG210\Runeborn\x64\Debug\Game.exe
