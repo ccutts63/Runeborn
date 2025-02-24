@@ -7,11 +7,12 @@
 #include <string>
 #include <conio.h>
 #include <limits>
-
+#include <fstream>
+#include <filesystem>
 
 using namespace std;
 
-void WaitForUser();
+void SaveGame();
 void HideCursor();
 bool CheckIfEnoughGold(const Item& item);
 void ShopArmourMenu();
@@ -31,7 +32,10 @@ struct MenuItem {
 	std::string text;
 };
 
+
+
 //generate Random Items
+
 Weapon w1 = Weapon(new_rnd_num(31), new_rnd_num(999), new_rnd_num(200), new_rnd_num(30));
 Weapon w2 = Weapon(new_rnd_num(31), new_rnd_num(999), new_rnd_num(200), new_rnd_num(30));
 Weapon w3 = Weapon(new_rnd_num(31), new_rnd_num(999), new_rnd_num(200), new_rnd_num(30));
@@ -54,12 +58,15 @@ Potion p1 = Potion(0); //minor
 Potion p2 = Potion(1); //light
 Potion p3 = Potion(2); //normal
 
+
+
 Character player("", 0);
 //global
 
 int main() {
-
+	srand(time(0)); // Random seed
 	//player.ShowInventoryMenu();
+
 
 	TitleScreen();
 	PlayerMenu();
@@ -149,7 +156,7 @@ void PlayerMenu() {
 			case 0: Battle(new_rnd_num(9), new_rnd_num(5)); break;
 			case 1: ShopMenu(); break;
 			case 2: player.ShowInventoryMenu(); break;
-			case 3: TitleScreen(); break;
+			case 3: SaveGame(); break;
 			}
 
 			PlayerMenu(); //loop back to menu
@@ -161,7 +168,11 @@ void PlayerMenu() {
 
 }
 
-void DrawBattle(Enemy * e) {
+
+
+
+
+void DrawBattleBackground(Enemy * e) {
 	system("cls");
 
 
@@ -208,58 +219,6 @@ void DrawBattle(Enemy * e) {
 	SetCursorPosition(8, 20);
 	cout << "LVL: " << player.playerLevel << " " << player.playerName;
 
-	//player health bar
-	float x = player.playerMaxHealth / 6.0f;
-	int y = player.playerHealth / x;
-
-	switch (y) {
-	case 0: break;
-	case 1: 
-		PrintSpriteAt(3, 14, "  \n  \n  \n  \n  \n++");		
-		break;
-	case 2:
-		PrintSpriteAt(3, 14, "  \n  \n  \n  \n++\n++");
-		break;
-	case 3:
-		PrintSpriteAt(3, 14, "  \n  \n  \n++\n++\n++");
-		break;
-	case 4:
-		PrintSpriteAt(3, 14, "  \n  \n++\n++\n++\n++");
-		break;
-	case 5:
-		PrintSpriteAt(3, 14, "  \n++\n++\n++\n++\n++");
-		break;
-	case 6:
-		PrintSpriteAt(3, 14, "++\n++\n++\n++\n++\n++");
-		break;
-	}
-
-	//player health bar
-	x = e->enemyMaxHealth / 6.0f;
-	y = e->enemyHealth / x;
-
-	switch (y) {
-	case 0: break;
-	case 1:
-		PrintSpriteAt(56, 2, "  \n  \n  \n  \n  \n++");
-		break;
-	case 2:
-		PrintSpriteAt(56, 2, "  \n  \n  \n  \n++\n++");
-		break;
-	case 3:
-		PrintSpriteAt(56, 2, "  \n  \n  \n++\n++\n++");
-		break;
-	case 4:
-		PrintSpriteAt(56, 2, "  \n  \n++\n++\n++\n++");
-		break;
-	case 5:
-		PrintSpriteAt(56, 2, "  \n++\n++\n++\n++\n++");
-		break;
-	case 6:
-		PrintSpriteAt(56, 2, "++\n++\n++\n++\n++\n++");
-		break;
-	}
-
 }
 
 void Battle(short int enemy_ID, short int enemy_level, short int enemy_attack, short int enemy_defence, short int enemy_health) {
@@ -275,7 +234,9 @@ void Battle(short int enemy_ID, short int enemy_level, short int enemy_attack, s
 		{ 17, 24, "RUN" }
 	};
 
-	DrawBattle(e1);
+	DrawBattleBackground(e1);
+	player.UpdateBattleHealthPlayer();
+	e1->UpdateBattleHealthEnemy();
 
 	int menuSize = sizeof(menu) / sizeof(menu[0]);
 
@@ -314,30 +275,30 @@ void Battle(short int enemy_ID, short int enemy_level, short int enemy_attack, s
 			}
 			else if (input == '\r') { // Enter key
 
-				
+				SetCursorPosition(2, 26);
+				std::cout << "                                          ";
 
 				switch (selectedItem) {
 				case 0:
 
-					if (player.Attack(*e1)) {
-						battleEnd = true;
-						break;
-					}
-					if (e1->Attack(player)) {
-						battleEnd = true;
-						break;
-					}
-					DrawBattle(e1);
-
+					if (player.Attack(*e1)) { battleEnd = true; break; } //if player attack wins
+					
+					if (e1->Attack(player)) { battleEnd = true; break; } //if enemy attack wins
+					
 					break;
+
 				case 1:
 					player.ShowInventoryMenu();
-					DrawBattle(e1);
+
+					//redraw
+					DrawBattleBackground(e1);
+					player.UpdateBattleHealthPlayer();
+					e1->UpdateBattleHealthEnemy();
+
 					break;
 				case 2:
 					SetCursorPosition(2, 26);
 					SlowPrint("Got away safely...");
-					WaitForUser();
 
 					battleEnd = true;
 					break;
@@ -573,7 +534,7 @@ void ShopPotionsMenu() {
 					SetCursorPosition(2, 26); //info
 					SlowPrint(0, p1.name, " added to Inventory...");
 
-					WaitForUser();
+					 
 					player.PrintStats();
 
 					SetCursorPosition(2, 26); //clear line
@@ -583,7 +544,7 @@ void ShopPotionsMenu() {
 					SetCursorPosition(2, 26);
 
 					SlowPrint(0, "Not enough gold...");
-					WaitForUser();
+					 
 
 					SetCursorPosition(2, 26); //clear line
 					cout << "                                                  ";
@@ -598,7 +559,7 @@ void ShopPotionsMenu() {
 					SetCursorPosition(2, 26); // Info
 					SlowPrint(0, p2.name, " added to Inventory...");
 
-					WaitForUser();
+					 
 					player.PrintStats();
 
 					SetCursorPosition(2, 26); // Clear line
@@ -607,7 +568,7 @@ void ShopPotionsMenu() {
 				else {
 					SetCursorPosition(2, 26);
 					SlowPrint(0, "Not enough gold...");
-					WaitForUser();
+					 
 
 					SetCursorPosition(2, 26); // Clear line
 					cout << "                                                  ";
@@ -622,7 +583,7 @@ void ShopPotionsMenu() {
 					SetCursorPosition(2, 26); // Info
 					SlowPrint(0, p3.name, " added to Inventory...");
 
-					WaitForUser();
+					 
 					player.PrintStats();
 
 					SetCursorPosition(2, 26); // Clear line
@@ -631,7 +592,7 @@ void ShopPotionsMenu() {
 				else {
 					SetCursorPosition(2, 26);
 					SlowPrint(0, "Not enough gold...");
-					WaitForUser();
+				
 
 					SetCursorPosition(2, 26); // Clear line
 					cout << "                                                  ";
@@ -650,6 +611,8 @@ void ShopPotionsMenu() {
 
 }
 void ShopWeaponsMenu() {
+
+
 	system("cls");
 	int selectedItem = 0; // Tracks which menu option is selected
 
@@ -789,9 +752,8 @@ void ShopWeaponsMenu() {
 					player.weaponInventory.push_back(w1);
 
 					SetCursorPosition(2, 26); //info
-					SlowPrint(0, w1.name, " added to Inventory...");
+					SlowPrint(w1.name, " added to Inventory...");
 
-					WaitForUser();
 					player.PrintStats();
 
 					SetCursorPosition(2, 26); //clear line
@@ -801,7 +763,7 @@ void ShopWeaponsMenu() {
 					SetCursorPosition(2, 26);
 
 					SlowPrint(0, "Not enough gold...");
-					WaitForUser();
+				
 
 					SetCursorPosition(2, 26); //clear line
 					cout << "                                                  ";
@@ -809,6 +771,7 @@ void ShopWeaponsMenu() {
 
 				break;
 			case 1:
+
 				if (CheckIfEnoughGold(w2)) {
 					player.playerGold -= w2.cost;
 					player.weaponInventory.push_back(w2);
@@ -816,7 +779,7 @@ void ShopWeaponsMenu() {
 					SetCursorPosition(2, 26); // Info
 					SlowPrint(0, w2.name, " added to Inventory...");
 
-					WaitForUser();
+				
 					player.PrintStats();
 
 					SetCursorPosition(2, 26); // Clear line
@@ -825,7 +788,7 @@ void ShopWeaponsMenu() {
 				else {
 					SetCursorPosition(2, 26);
 					SlowPrint(0, "Not enough gold...");
-					WaitForUser();
+					
 
 					SetCursorPosition(2, 26); // Clear line
 					cout << "                                                  ";
@@ -840,7 +803,7 @@ void ShopWeaponsMenu() {
 					SetCursorPosition(2, 26); // Info
 					SlowPrint(0, w3.name, " added to Inventory...");
 
-					WaitForUser();
+					 
 					player.PrintStats();
 
 					SetCursorPosition(2, 26); // Clear line
@@ -849,7 +812,7 @@ void ShopWeaponsMenu() {
 				else {
 					SetCursorPosition(2, 26);
 					SlowPrint(0, "Not enough gold...");
-					WaitForUser();
+					 
 
 					SetCursorPosition(2, 26); // Clear line
 					cout << "                                                  ";
@@ -864,7 +827,7 @@ void ShopWeaponsMenu() {
 					SetCursorPosition(2, 26); // Info
 					SlowPrint(0, w4.name, " added to Inventory...");
 
-					WaitForUser();
+					 
 					player.PrintStats();
 
 					SetCursorPosition(2, 26); // Clear line
@@ -873,7 +836,7 @@ void ShopWeaponsMenu() {
 				else {
 					SetCursorPosition(2, 26);
 					SlowPrint(0, "Not enough gold...");
-					WaitForUser();
+					 
 
 					SetCursorPosition(2, 26); // Clear line
 					cout << "                                                  ";
@@ -888,7 +851,7 @@ void ShopWeaponsMenu() {
 					SetCursorPosition(2, 26); // Info
 					SlowPrint(0, w5.name, " added to Inventory...");
 
-					WaitForUser();
+					 
 					player.PrintStats();
 
 					SetCursorPosition(2, 26); // Clear line
@@ -897,7 +860,7 @@ void ShopWeaponsMenu() {
 				else {
 					SetCursorPosition(2, 26);
 					SlowPrint(0, "Not enough gold...");
-					WaitForUser();
+					 
 
 					SetCursorPosition(2, 26); // Clear line
 					cout << "                                                  ";
@@ -1053,7 +1016,7 @@ void ShopArmourMenu() {
 					SetCursorPosition(2, 26); //info
 					SlowPrint(0, a1.name, " added to Inventory...");
 
-					WaitForUser();
+					 
 					player.PrintStats();
 
 					SetCursorPosition(2, 26); //clear line
@@ -1063,7 +1026,7 @@ void ShopArmourMenu() {
 					SetCursorPosition(2, 26);
 
 					SlowPrint(0, "Not enough gold...");
-					WaitForUser();
+					 
 
 					SetCursorPosition(2, 26); //clear line
 					cout << "                                                  ";
@@ -1078,7 +1041,7 @@ void ShopArmourMenu() {
 					SetCursorPosition(2, 26); // Info
 					SlowPrint(0, a2.name, " added to Inventory...");
 
-					WaitForUser();
+					 
 					player.PrintStats();
 
 					SetCursorPosition(2, 26); // Clear line
@@ -1087,7 +1050,7 @@ void ShopArmourMenu() {
 				else {
 					SetCursorPosition(2, 26);
 					SlowPrint(0, "Not enough gold...");
-					WaitForUser();
+					 
 
 					SetCursorPosition(2, 26); // Clear line
 					cout << "                                                  ";
@@ -1102,7 +1065,7 @@ void ShopArmourMenu() {
 					SetCursorPosition(2, 26); // Info
 					SlowPrint(0, a3.name, " added to Inventory...");
 
-					WaitForUser();
+					 
 					player.PrintStats();
 
 					SetCursorPosition(2, 26); // Clear line
@@ -1111,7 +1074,7 @@ void ShopArmourMenu() {
 				else {
 					SetCursorPosition(2, 26);
 					SlowPrint(0, "Not enough gold...");
-					WaitForUser();
+					 
 
 					SetCursorPosition(2, 26); // Clear line
 					cout << "                                                  ";
@@ -1126,7 +1089,7 @@ void ShopArmourMenu() {
 					SetCursorPosition(2, 26); // Info
 					SlowPrint(0, a4.name, " added to Inventory...");
 
-					WaitForUser();
+					 
 					player.PrintStats();
 
 					SetCursorPosition(2, 26); // Clear line
@@ -1135,7 +1098,7 @@ void ShopArmourMenu() {
 				else {
 					SetCursorPosition(2, 26);
 					SlowPrint(0, "Not enough gold...");
-					WaitForUser();
+					 
 
 					SetCursorPosition(2, 26); // Clear line
 					cout << "                                                  ";
@@ -1150,7 +1113,7 @@ void ShopArmourMenu() {
 					SetCursorPosition(2, 26); // Info
 					SlowPrint(0, a5.name, " added to Inventory...");
 
-					WaitForUser();
+					 
 					player.PrintStats();
 
 					SetCursorPosition(2, 26); // Clear line
@@ -1159,7 +1122,7 @@ void ShopArmourMenu() {
 				else {
 					SetCursorPosition(2, 26);
 					SlowPrint(0, "Not enough gold...");
-					WaitForUser();
+					 
 
 					SetCursorPosition(2, 26); // Clear line
 					cout << "                                                  ";
@@ -1318,7 +1281,7 @@ void ShopShieldsMenu() {
 					SetCursorPosition(2, 26); //info
 					SlowPrint(0, s1.name, " added to Inventory...");
 
-					WaitForUser();
+					 
 					player.PrintStats();
 
 					SetCursorPosition(2, 26); //clear line
@@ -1328,7 +1291,7 @@ void ShopShieldsMenu() {
 					SetCursorPosition(2, 26);
 
 					SlowPrint(0, "Not enough gold...");
-					WaitForUser();
+					 
 
 					SetCursorPosition(2, 26); //clear line
 					cout << "                                                  ";
@@ -1343,7 +1306,7 @@ void ShopShieldsMenu() {
 					SetCursorPosition(2, 26); // Info
 					SlowPrint(0, s2.name, " added to Inventory...");
 
-					WaitForUser();
+					 
 					player.PrintStats();
 
 					SetCursorPosition(2, 26); // Clear line
@@ -1352,7 +1315,7 @@ void ShopShieldsMenu() {
 				else {
 					SetCursorPosition(2, 26);
 					SlowPrint(0, "Not enough gold...");
-					WaitForUser();
+					 
 
 					SetCursorPosition(2, 26); // Clear line
 					cout << "                                                  ";
@@ -1367,7 +1330,7 @@ void ShopShieldsMenu() {
 					SetCursorPosition(2, 26); // Info
 					SlowPrint(0, s3.name, " added to Inventory...");
 
-					WaitForUser();
+					 
 					player.PrintStats();
 
 					SetCursorPosition(2, 26); // Clear line
@@ -1376,7 +1339,7 @@ void ShopShieldsMenu() {
 				else {
 					SetCursorPosition(2, 26);
 					SlowPrint(0, "Not enough gold...");
-					WaitForUser();
+					 
 
 					SetCursorPosition(2, 26); // Clear line
 					cout << "                                                  ";
@@ -1391,7 +1354,7 @@ void ShopShieldsMenu() {
 					SetCursorPosition(2, 26); // Info
 					SlowPrint(0, s4.name, " added to Inventory...");
 
-					WaitForUser();
+					 
 					player.PrintStats();
 
 					SetCursorPosition(2, 26); // Clear line
@@ -1400,7 +1363,7 @@ void ShopShieldsMenu() {
 				else {
 					SetCursorPosition(2, 26);
 					SlowPrint(0, "Not enough gold...");
-					WaitForUser();
+					 
 
 					SetCursorPosition(2, 26); // Clear line
 					cout << "                                                  ";
@@ -1415,7 +1378,7 @@ void ShopShieldsMenu() {
 					SetCursorPosition(2, 26); // Info
 					SlowPrint(0, s5.name, " added to Inventory...");
 
-					WaitForUser();
+					 
 					player.PrintStats();
 
 					SetCursorPosition(2, 26); // Clear line
@@ -1424,7 +1387,7 @@ void ShopShieldsMenu() {
 				else {
 					SetCursorPosition(2, 26);
 					SlowPrint(0, "Not enough gold...");
-					WaitForUser();
+					 
 
 					SetCursorPosition(2, 26); // Clear line
 					cout << "                                                  ";
@@ -1443,14 +1406,14 @@ void ShopShieldsMenu() {
 bool CheckIfEnoughGold(const Item& item) {
 	if (player.playerGold < item.cost) {
 		SlowPrint(0, "Not enough Gold");
-		WaitForUser();
+		 
 		return false;
 	}
 	return true;
 }
 
 void TitleScreen() {
-	srand(time(0)); // Random seed
+	
 	HideCursor(); // Hide cursor
 
 	system("cls");
@@ -1578,8 +1541,204 @@ void NewCharacter() {
 }
 
 void LoadGame() {
-	cout << "poo";
+	string filename = "";
+
+	system("cls");
+
+	cout << "----------------My Characters-----------------\n";
+
+	system("ls './' -d *.SAV"); //must have linux subsystem installed
+
+	cout << "----------------------------------------------\n";
+	cout << "\nName of The File to Load: ";
+	getline(cin, filename);
+
+	std::ifstream inFile(filename);
+
+	if (inFile.is_open()) {
+		std::string line;
+
+		// Read player stats
+		string name;
+		int cls;
+
+		std::getline(inFile, name);
+		inFile >> cls;
+
+		player = Character(name, cls); //sets sprite
+		cout << name << '\n' << cls;
+
+		inFile >> player.playerHealth >> player.playerMaxHealth
+			>> player.playerAttack >> player.playerDefense
+			>> player.playerExperience >> player.playerMaxExperience
+			>> player.playerGold >> player.playerLevel;
+
+		cout << player.playerHealth << '\n' << player.playerMaxHealth << '\n'
+			<< player.playerAttack << '\n' <<  player.playerDefense << '\n'
+			<< player.playerExperience << '\n' << player.playerMaxExperience << '\n'
+			<< player.playerGold << '\n' << player.playerLevel << '\n';
+
+	
+
+
+		int id = 0,
+			cost = 0, 
+			sell = 0,
+			atk = 0,
+			def = 0, 
+			ctb = 0;
+
+		// Load equipped items
+		//weapon
+		inFile >> id >> cost >> sell >> atk;
+		Weapon* w1 = new Weapon(id, cost, sell, atk);
+
+		player.equipedWeapon = *w1;
+
+		cout << id << '\n' << cost << '\n' << sell << '\n' << atk << '\n';
+
+		delete w1;
+
+		//armour
+		inFile >> id >> cost >> sell >> def;
+		Armour* a1 = new Armour(id, cost, sell, def);
+
+		player.equipedArmour = *a1;
+
+		cout << id << '\n' << cost << '\n' << sell << '\n' << def << '\n';
+
+		delete a1;
+		
+		//shield
+		inFile >> id >> cost >> sell >> ctb;
+		Shield* s1 = new Shield(id, cost, sell, ctb);
+
+		player.equipedShield = *s1;
+
+		cout << id << '\n' << cost << '\n' << sell << '\n' << ctb << '\n';
+
+		delete s1;
+
+
+		// Load inventory data for Potions
+		short int count;
+
+		inFile >> count;
+
+		for (int i = 0; i < count; ++i) {
+			inFile >> id;
+			player.potionInventory.push_back(Potion(id));
+		}
+
+		// Load inventory data for Weapons
+		inFile >> count;
+
+		for (int i = 0; i < count; ++i) {
+			inFile >> id >> cost >> sell >> atk;
+			player.weaponInventory.push_back(Weapon(id, cost, sell, atk));
+		}
+
+		 
+
+		// Load inventory data for Armours
+		inFile >> count;
+
+		for (int i = 0; i < count; ++i) {
+			inFile >> id >> cost >> sell >> def;
+			player.armourInventory.push_back(Armour(id, cost, sell, def));
+		}
+
+		// Load inventory data for Shields
+		inFile >> count;
+
+		for (int i = 0; i < count; ++i) {
+			inFile >> id >> cost >> sell >> ctb;
+			player.shieldInventory.push_back(Shield(id, cost, sell, ctb));
+		}
+
+		inFile.close();
+		
+		PlayerMenu();
+	}
+	else {
+		SlowPrint("Error loading character data!");
+	}
 }
 
+void SaveGame() {
+	string filename = player.playerName + ".SAV";
 
+	ofstream outFile(filename);
+	if (outFile.is_open()) {
+			// Save player stats
+			outFile << player.playerName << "\n"
+				<< player.playerClass << "\n"
+				<< player.playerHealth << "\n"
+				<< player.playerMaxHealth << "\n"
+				<< player.playerAttack << "\n"
+				<< player.playerDefense << "\n"
+				<< player.playerExperience << "\n"
+				<< player.playerMaxExperience << "\n"
+				<< player.playerGold << "\n"
+				<< player.playerLevel << "\n"
+				<< player.equipedWeapon.id << '\n'
+				<< player.equipedWeapon.cost << "\n"
+				<< player.equipedWeapon.sellPrice << "\n"
+				<< player.equipedWeapon.attack << "\n"
+				<< player.equipedArmour.id << "\n"
+				<< player.equipedArmour.cost << "\n"
+				<< player.equipedArmour.sellPrice << "\n"
+				<< player.equipedArmour.defense << "\n"
+				<< player.equipedShield.id << "\n"
+				<< player.equipedShield.cost << "\n"
+				<< player.equipedShield.sellPrice << '\n'
+				<< player.equipedShield.blockChance << "\n";
+
+			
+			// Save inventory data for Potions
+			outFile << player.potionInventory.size() << "\n";  // Save number of potions
+			for (const auto& potion : player.potionInventory) {
+				//save each potion id
+				outFile << potion.id << "\n";
+			}
+
+			// Save inventory data for Weapons
+			outFile << player.weaponInventory.size() << "\n";  // Save number of weapons
+			for (const auto& weapon : player.weaponInventory) {
+				// Save weapon properties
+				outFile << weapon.id << "\n"
+					<< weapon.cost << "\n"
+					<< weapon.sellPrice << "\n"
+					<< weapon.attack << "\n";
+			}
+
+			// Save inventory data for Armours
+			outFile << player.armourInventory.size() << "\n";  // Save number of armors
+			for (const auto& armour : player.armourInventory) {
+				// Save armor properties
+				outFile << armour.id << "\n"
+					<< armour.cost << "\n"
+					<< armour.sellPrice << "\n"
+					<< armour.defense << "\n";
+			}
+
+			// Save inventory data for Shields
+			outFile << player.shieldInventory.size() << "\n";  // Save number of shields
+			for (const auto& shield : player.shieldInventory) {
+				// Save shield properties
+				outFile << shield.id << "\n"
+					<< shield.cost << "\n"
+					<< shield.sellPrice << "\n"
+					<< shield.blockChance << "\n";
+			}
+
+			outFile.close();
+			SlowPrint("Saved.");
+			TitleScreen();
+	}
+	else {
+		SlowPrint("Error..");
+	}
+
+}
 

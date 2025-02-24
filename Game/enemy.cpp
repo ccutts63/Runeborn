@@ -164,38 +164,133 @@ Enemy::Enemy(short int enemy_ID, short int enemy_Level, short int enemy_Attack, 
 
 }
 
-void Enemy::Defend(short int attack_damage) {
-    short int dmg = attack_damage - new_rnd_num(enemyDefence);
-    if (dmg < 0) { dmg = 0; } //cant have negative damage
-
-    enemyHealth -= dmg;
-    SetCursorPosition(2, 26);
-    SlowPrint("You delt ", dmg, " Damage!");
-}
 
 bool Enemy::Attack(Character& player) {
     SetCursorPosition(2, 26);
     SlowPrint("The wild ", enemyName, " Attacked!");
 
-    player.Defend(enemyAttack);
+    short int dmg = enemyAttack - new_rnd_num(player.playerDefense);
+    if (dmg < 0) { dmg = 0; } //cant have negative damage
 
-    if (player.playerHealth <= 0) { //if player health 0
+    player.playerHealth -= dmg;
+    if (player.playerHealth < 0) { player.playerHealth = 0; }
 
-        player.playerHealth = 0;
+    player.UpdateBattleHealthPlayer();
 
-        SetCursorPosition(2, 26);
-        SlowPrint(player.playerName, " Died...");
+    SetCursorPosition(2, 26);
+    SlowPrint("You took ", dmg, " Damage!");
 
-        int gld = player.playerGold / 2; //deduct gold
-        player.playerGold -= gld;
+    if (player.playerHealth != 0) { //if player health 0
 
-        SetCursorPosition(2, 26);
-        SlowPrint(player.playerName, " Lost ", gld, " Gold...");
-
-        player.playerHealth = player.playerMaxHealth; //reset health
-
-        return true;
+        return false;
+        
     }
-    return false;
+
+    player.UpdateBattlePlayerFaint();
+
+    SetCursorPosition(2, 26);
+    SlowPrint(player.playerName, " Died...");
+
+    int gld = player.playerGold / 2; //deduct gold
+    player.playerGold -= gld;
+
+    SetCursorPosition(2, 26);
+    SlowPrint(player.playerName, " Lost ", gld, " Gold...");
+
+    player.playerHealth = player.playerMaxHealth; //reset health
+
+    return true;
+
+}
+
+void Enemy::UpdateBattleHealthEnemy() {
+
+    //player health bar
+    float x = enemyMaxHealth / 6.0f;
+    int y = enemyHealth / x;
+
+    switch (y) {
+    case 0: 
+        PrintSpriteAt(56, 2, "  \n  \n  \n  \n  \n  ");
+        break;
+    case 1:
+        PrintSpriteAt(56, 2, "  \n  \n  \n  \n  \n++");
+        break;
+    case 2:
+        PrintSpriteAt(56, 2, "  \n  \n  \n  \n++\n++");
+        break;
+    case 3:
+        PrintSpriteAt(56, 2, "  \n  \n  \n++\n++\n++");
+        break;
+    case 4:
+        PrintSpriteAt(56, 2, "  \n  \n++\n++\n++\n++");
+        break;
+    case 5:
+        PrintSpriteAt(56, 2, "  \n++\n++\n++\n++\n++");
+        break;
+    case 6:
+        PrintSpriteAt(56, 2, "++\n++\n++\n++\n++\n++");
+        break;
+    }
+}
+
+void Enemy::UpdateBattleEnemyFaint() {
+    std::vector<std::string> frames = {
+        // Initial standing frame
+        "^*^*^*^*^*^*^*^*^*^*^*^\n"
+        "*^*^*^*^*^*^*^*^*^*^*^*\n"
+        "^*^*^*^*^*^*^*^*^*^*^*^\n"
+        "*^*^*^*^*^*^*^*^*^*^*^*\n"
+        "^*^*^*^*^*^*^*^*^*^*^*^\n"
+        "*^*^*^*^*^*^*^*^*^*^*^*\n"
+        "^*^*^*^*^*^*^*^*^*^*^*^\n"
+        "*^*^*^*^*^*^*^*^*^*^*^*",
+
+        // Midway collapsing
+        "    ^*^*^*^*^*^*^*^*^*^\n"
+        "  *^*^*^*^*^*^*^*^*^*^*\n"
+        "   ^*^*^*^*^*^*^*^*^*^\n"
+        "    *^*^*^*^*^*^*^*^*^*\n"
+        "     ^*^*^*^*^*^*^*^*^\n"
+        "       *^*^*^*^*^*^*^*\n"
+        "         ^*^*^*^*^*^*^\n"
+        "           *^*^*^*^*^*",
+
+        // Almost fallen
+        "                 ^*^*^\n"
+        "               *^*^*^*\n"
+        "             ^*^*^*^*^\n"
+        "           *^*^*^*^*^*\n"
+        "         ^*^*^*^*^*^*^\n"
+        "       *^*^*^*^*^*^*^*\n"
+        "     ^*^*^*^*^*^*^*^*^\n"
+        "   *^*^*^*^*^*^*^*^*^*",
+
+        // Fully collapsed
+        " ^*^*^*^*^*^*^*^*^*^*^\n"
+        "*^*^*^*^*^*^*^*^*^*^*^*\n"
+        " ^*^*^*^*^*^*^*^*^*^*^\n"
+        "*^*^*^*^*^*^*^*^*^*^*^*\n"
+        "                         \n"
+        "                         \n"
+        "                         \n"
+        "                         ",
+
+        // Disappeared
+        "                         \n"
+        "                         \n"
+        "                         \n"
+        "                         \n"
+        "                         \n"
+        "                         \n"
+        "                         \n"
+        "                         "
+    };
+
+
+    for (const auto frame : frames) {
+        PrintSpriteAt(30, 2, frame);
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    }
 
 }

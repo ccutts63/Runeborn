@@ -4,9 +4,7 @@ const enum playerClass {BARBARIAN, KNIGHT, MAGE}; //set names for switch case
 
 
 //define global objects
-Weapon equipedWeapon(0, 0, 0, 0);
-Armour equipedArmour(0, 0, 0, 0);
-Shield equipedShield(0, 0, 0, 0);
+
 
 struct MenuItem {
 	int x, y;
@@ -20,9 +18,13 @@ Character::Character(std::string name, short int Class) {
 	playerChanceToBlock = 0;
 	playerExperience = 0; //set global initial values
 	playerMaxExperience = 100;
-	playerGold = 5000;
+	playerGold = 100;
 	playerLevel = 1;
 
+	equipedWeapon = Weapon(0, 0, 0, 0);
+	equipedArmour = Armour(0, 0, 0, 0);
+	equipedShield = Shield(0, 0, 0, 0);
+	
 	switch (playerClass) { // Set initial values based on class
 	case BARBARIAN:
 		playerHealth = playerMaxHealth = 10;
@@ -121,51 +123,142 @@ bool Character::Attack(Enemy& enemy) {
 	SetCursorPosition(2, 26);
 	SlowPrint("You Attacked...");
 
-	enemy.Defend(playerAttack);
-
-	if (enemy.enemyHealth <= 0) {
-
-		enemy.enemyHealth = 0;
-
-		SetCursorPosition(2, 26);
-		SlowPrint("The wild ", enemy.enemyName, " Fainted!");
-
-		short int exp = enemy.enemyLevel * 15;
-		short int gld = enemy.enemyLevel * 5 - new_rnd_num(enemy.enemyLevel * 2);
-
-		playerExperience += exp;
-		playerGold += gld;
-
-		SetCursorPosition(2, 26);
-		SlowPrint("You gained ", exp, " Experience!");
-
-		SetCursorPosition(2, 26);
-		SlowPrint("You collected ", gld, " Gold!");
-
-		if (playerExperience >= playerMaxExperience) { //level up
-			playerExperience -= playerMaxExperience;
-
-			playerLevel += 1;
-			SetCursorPosition(2, 26);
-			SlowPrint("You Leveled Up!");
-			WaitForUser();
-		}
-
-		return true; //battle finished
-	}
-
-	SetCursorPosition(2, 26);
-	SlowPrint("Enemy ", enemy.enemyName, "'s HP is: ", enemy.enemyHealth, "/", enemy.enemyMaxHealth);
-
-	return false; //battle continue
-}
-void Character::Defend(short int attack_damage) {
-	short int dmg = attack_damage - new_rnd_num(playerDefense);
+	short int dmg = playerAttack - new_rnd_num(enemy.enemyDefence);
 	if (dmg < 0) { dmg = 0; } //cant have negative damage
 
-	playerHealth -= dmg;
+	enemy.enemyHealth -= dmg;
+	if (enemy.enemyHealth < 0) { enemy.enemyHealth = 0; } //cant have negative health
+
+	enemy.UpdateBattleHealthEnemy();
+
 	SetCursorPosition(2, 26);
-	SlowPrint("You took ", dmg, " Damage!");
+	SlowPrint("You delt ", dmg, " Damage!");
+
+	if (enemy.enemyHealth != 0) {
+		SetCursorPosition(2, 26);
+		SlowPrint("Enemy ", enemy.enemyName, "'s HP is: ", enemy.enemyHealth, "/", enemy.enemyMaxHealth);
+
+		return false; //battle continue
+	}
+
+	enemy.UpdateBattleEnemyFaint();
+
+	SetCursorPosition(2, 26);
+	SlowPrint("The wild ", enemy.enemyName, " Died!");
+
+	short int exp = enemy.enemyLevel * 15;
+	short int gld = enemy.enemyLevel * 5 - new_rnd_num(enemy.enemyLevel * 2);
+
+	playerExperience += exp;
+	playerGold += gld;
+
+	SetCursorPosition(2, 26);
+	SlowPrint("You gained ", exp, " Experience!");
+
+	SetCursorPosition(2, 26);
+	SlowPrint("You collected ", gld, " Gold!");
+
+	if (playerExperience >= playerMaxExperience) { //level up
+		playerExperience -= playerMaxExperience;
+
+		playerLevel += 1;
+		SetCursorPosition(2, 26);
+		SlowPrint("You Grew to ", playerLevel, "!");
+	}
+
+	return true; //battle finished
+
+}
+
+void Character::UpdateBattleHealthPlayer() {
+
+	//player health bar
+	float x = playerMaxHealth / 6.0f;
+	int y = playerHealth / x;
+
+	switch (y) {
+	case 0: 
+		PrintSpriteAt(3, 14, "  \n  \n  \n  \n  \n  ");
+		break;
+	case 1:
+		PrintSpriteAt(3, 14, "  \n  \n  \n  \n  \n++");
+		break;
+	case 2:
+		PrintSpriteAt(3, 14, "  \n  \n  \n  \n++\n++");
+		break;
+	case 3:
+		PrintSpriteAt(3, 14, "  \n  \n  \n++\n++\n++");
+		break;
+	case 4:
+		PrintSpriteAt(3, 14, "  \n  \n++\n++\n++\n++");
+		break;
+	case 5:
+		PrintSpriteAt(3, 14, "  \n++\n++\n++\n++\n++");
+		break;
+	case 6:
+		PrintSpriteAt(3, 14, "++\n++\n++\n++\n++\n++");
+		break;
+	}
+}
+
+void Character::UpdateBattlePlayerFaint() {
+	std::vector<std::string> frames = {
+		// Initial standing frame
+		"^*^*^*^*^*^*^*^*^*^*^*^\n"
+		"*^*^*^*^*^*^*^*^*^*^*^*\n"
+		"^*^*^*^*^*^*^*^*^*^*^*^\n"
+		"*^*^*^*^*^*^*^*^*^*^*^*\n"
+		"^*^*^*^*^*^*^*^*^*^*^*^\n"
+		"*^*^*^*^*^*^*^*^*^*^*^*\n"
+		"^*^*^*^*^*^*^*^*^*^*^*^\n"
+		"*^*^*^*^*^*^*^*^*^*^*^*",
+
+		// Midway collapsing
+		"    ^*^*^*^*^*^*^*^*^*^\n"
+		"  *^*^*^*^*^*^*^*^*^*^*\n"
+		"   ^*^*^*^*^*^*^*^*^*^\n"
+		"    *^*^*^*^*^*^*^*^*^*\n"
+		"     ^*^*^*^*^*^*^*^*^\n"
+		"       *^*^*^*^*^*^*^*\n"
+		"         ^*^*^*^*^*^*^\n"
+		"           *^*^*^*^*^*",
+
+		// Almost fallen
+		"                 ^*^*^\n"
+		"               *^*^*^*\n"
+		"             ^*^*^*^*^\n"
+		"           *^*^*^*^*^*\n"
+		"         ^*^*^*^*^*^*^\n"
+		"       *^*^*^*^*^*^*^*\n"
+		"     ^*^*^*^*^*^*^*^*^\n"
+		"   *^*^*^*^*^*^*^*^*^*",
+
+		// Fully collapsed
+		" ^*^*^*^*^*^*^*^*^*^*^\n"
+		"*^*^*^*^*^*^*^*^*^*^*^*\n"
+		" ^*^*^*^*^*^*^*^*^*^*^\n"
+		"*^*^*^*^*^*^*^*^*^*^*^*\n"
+		"                         \n"
+		"                         \n"
+		"                         \n"
+		"                         ",
+
+		// Disappeared
+		"                         \n"
+		"                         \n"
+		"                         \n"
+		"                         \n"
+		"                         \n"
+		"                         \n"
+		"                         \n"
+		"                         "
+	};
+
+
+	for (const auto frame : frames) {
+		PrintSpriteAt(8, 10, frame);
+		std::this_thread::sleep_for(std::chrono::milliseconds(300));
+	}
 
 }
 
@@ -870,7 +963,6 @@ void Character::UseInventoryItem(int index, ItemType type) {
 		SetCursorPosition(3, 26);
 
 		SlowPrint(0, "Replenished ", potionInventory[index].health, " HP");
-		WaitForUser();
 
 		playerHealth += potionInventory[index].health;
 
@@ -889,7 +981,6 @@ void Character::UseInventoryItem(int index, ItemType type) {
 		SetCursorPosition(3, 26);
 
 		SlowPrint(0, atk > playerAttack ? "Equipping... +[" : "Equipping... -[", weaponInventory[index].attack, "] to your ATK STAT");
-		WaitForUser();
 
 		playerAttack = atk;
 
@@ -910,7 +1001,6 @@ void Character::UseInventoryItem(int index, ItemType type) {
 		SetCursorPosition(3, 26);
 
 		SlowPrint(0, def > playerDefense ? "Equipping... +[" : "Equipping... -[", armourInventory[index].defense, "] to your DEF STAT");
-		WaitForUser();
 
 		playerDefense = def;
 
@@ -931,7 +1021,6 @@ void Character::UseInventoryItem(int index, ItemType type) {
 		SetCursorPosition(3, 26);
 
 		SlowPrint(0, block > playerChanceToBlock ? "Equipping... +[" : "Equipping... -[", shieldInventory[index].blockChance, "] to your BLOCK STAT");
-		WaitForUser();
 
 		playerChanceToBlock = block;
 

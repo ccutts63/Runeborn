@@ -4,6 +4,7 @@
 class Item {
 public:
     std::string name;
+    short int id;
     short int cost;
     short int sellPrice;
 
@@ -22,6 +23,8 @@ public:
 
     //constructor
     Potion(short int potionID) {
+        id = potionID;
+
 
         switch (potionID) {
         case 0: 
@@ -54,7 +57,8 @@ public:
     short int attack;
 
     // Constructor
-    Weapon(short int weaponID, short int weaponCost, short int weaponSellPrice, short int attackValue) {
+    Weapon(short int weaponID = 0, short int weaponCost = 0, short int weaponSellPrice = 0, short int attackValue = 0) {
+        id = weaponID;
         cost = weaponCost;
         sellPrice = weaponSellPrice;
         attack = attackValue;
@@ -105,7 +109,8 @@ public:
     short int defense;
 
     // Constructor
-    Armour(short int armourID, short int armourCost, short int armourSellPrice, short int defenseValue) {
+    Armour(short int armourID = 0, short int armourCost = 0, short int armourSellPrice = 0, short int defenseValue = 0) {
+        id = armourID;
         cost = armourCost;
         sellPrice = armourSellPrice;
         defense = defenseValue;
@@ -156,8 +161,8 @@ public:
     short int blockChance;
 
     // Constructor
-    Shield(short shieldID, short int shieldCost, short int sheildSellPrice, short int chance_toBlock) {
-
+    Shield(short shieldID = 0, short int shieldCost = 0, short int sheildSellPrice = 0, short int chance_toBlock = 0) {
+        id = shieldID;
         cost = shieldCost;
 		sellPrice = sheildSellPrice;
 		blockChance = chance_toBlock;

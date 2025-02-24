@@ -1,6 +1,3 @@
-//from ChatGpt
-
-
 #pragma once
 #include <iostream>
 #include "console_utils.h"
@@ -9,6 +6,8 @@
 #include <conio.h>
 #include <thread>
 #include <chrono>
+
+
 
 // Convert any type to a string
 template <typename T>
@@ -22,7 +21,7 @@ std::string ToString(const T& value) {
 inline void SlowPrintHelper(const std::string& text) {
     for (char c : text) {
         std::cout << c << std::flush;
-        std::this_thread::sleep_for(std::chrono::microseconds(3)); // Adjust speed
+        std::this_thread::sleep_for(std::chrono::milliseconds(25)); // Adjust speed
     }
     
 }

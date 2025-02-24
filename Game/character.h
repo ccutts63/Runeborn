@@ -15,11 +15,6 @@ class Enemy;
 
 class Character
 {
-private:
-	short int playerClass; //up to 255
-
-
-
 public:
 	std::string playerName;
 	std::string playerSprite;
@@ -27,6 +22,7 @@ public:
 	std::vector<Weapon> weaponInventory;
 	std::vector<Armour> armourInventory;
 	std::vector<Shield> shieldInventory;
+	short int playerClass; //up to 255
 	int playerGold;
 	int playerMaxExperience;
 	short int playerChanceToBlock;
@@ -36,7 +32,10 @@ public:
 	short int playerDefense;
 	short int playerExperience;
 	short int playerLevel; //upto 255 (100 is max)
-	
+
+	Weapon equipedWeapon;
+	Armour equipedArmour;
+	Shield equipedShield;
 
 	//constructor
 	Character(std::string name, short int Class);
@@ -58,5 +57,9 @@ public:
 	void ShowInventoryShield();
 
 	void PrintStats();
+
+	void UpdateBattleHealthPlayer();
+
+	void UpdateBattlePlayerFaint();
 };
 

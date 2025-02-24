@@ -26,5 +26,9 @@ public:
 
 	void Defend(short int attack_damage);
 	bool Attack(Character& player);
+
+	void UpdateBattleHealthEnemy();
+
+	void UpdateBattleEnemyFaint();
 };
 
